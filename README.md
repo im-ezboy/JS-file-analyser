@@ -218,16 +218,6 @@ Match: AKIAIOSFODNN7EXAMPLE
 - WAF detection may have false positives/negatives
 - XSS verification requires the target site to be accessible
 
-## 🔮 Future Enhancements
-
-- Database/Redis storage for persistent history
-- More WAF detection signatures
-- Advanced XSS payload generation
-- PDF/JSON report export
-- Scheduled scans
-- API rate limiting
-- User authentication
-
 ## 📄 License
 
 This project is for authorized security testing and educational purposes only.

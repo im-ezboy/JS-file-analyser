@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JavaScript Security Analyzer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="page">
+        <header class="hero">
+            <div class="hero-text">
+                <p class="eyebrow"><i class="fas fa-bolt"></i> JavaScript Scanner</p>
+                <h1><i class="fas fa-shield-alt"></i> JavaScript Security Analyzer</h1>
+                <p class="subtitle">Analyze JavaScript files for sensitive data, XSS issues, and API endpoints. All processing happens server-side.</p>
+                <div class="hero-actions">
+                    <span class="chip"><i class="fas fa-server"></i> Server-side only</span>
+                    <span class="chip"><i class="fas fa-lock"></i> No client execution</span>
+                    <span class="chip"><i class="fas fa-sitemap"></i> Multi-file ready</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Tabs -->
+        <div class="main-tabs-container">
+            <div class="main-tabs">
+                <button class="main-tab-btn active" data-main-tab="scan">
+                    <i class="fas fa-search"></i> New Scan
+                </button>
+                <button class="main-tab-btn" data-main-tab="history">
+                    <i class="fas fa-history"></i> History
+                </button>
+            </div>
+        </div>
+
+        <!-- New Scan Tab Content -->
+        <div id="scan-tab-content" class="main-tab-content active">
+            <section class="panel input-panel">
+                <div class="panel-header">
+                    <div>
+                        <p class="eyebrow">Input</p>
+                        <h2>Choose how to scan</h2>
+                        <p class="muted">Provide a page URL, JS file URL(s), or upload a file with URLs (one per line).</p>
+                        <p class="muted" style="margin-top: 8px; color: var(--primary); font-weight: 600;">
+                            <i class="fas fa-magic"></i> Tip: Enter a website URL and we'll automatically find all JavaScript files!
+                        </p>
+                    </div>
+                    <div class="hint">Use localhost instead of 0.0.0.0 for local files.</div>
+                </div>
+                
+                <div id="waf-warning" class="waf-warning hidden">
+                    <div class="waf-warning-content">
+                        <i class="fas fa-shield-alt"></i>
+                        <div>
+                            <strong id="waf-name">WAF Detected</strong>
+                            <span id="waf-message">A Web Application Firewall is protecting this site.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="input-tabs">
+                    <button class="tab-btn active" data-tab="single"><i class="fas fa-link"></i> Single URL</button>
+                    <button class="tab-btn" data-tab="multiple"><i class="fas fa-list"></i> Multiple URLs</button>
+                    <button class="tab-btn" data-tab="file"><i class="fas fa-file-upload"></i> Upload File</button>
+                </div>
+
+                <!-- Single URL Tab -->
+                <div id="single-tab" class="tab-content active">
+                    <label class="field">
+                        <span class="field-label">Page URL or JavaScript file URL</span>
+                        <div class="input-group">
+                            <input type="text" id="jsUrl" placeholder="https://example.com or https://example.com/app.js" />
+                            <button id="analyzeBtn" class="btn-primary">
+                                <i class="fas fa-search"></i> Analyze
+                            </button>
+                        </div>
+                        <div class="hint" style="margin-top: 8px;">
+                            <i class="fas fa-info-circle"></i> Enter a website URL (e.g., https://example.com) to automatically find all JS files, or a direct JS file URL.
+                        </div>
+                    </label>
+                </div>
+
+                <!-- Multiple URLs Tab -->
+                <div id="multiple-tab" class="tab-content hidden">
+                    <label class="field">
+                        <span class="field-label">Multiple URLs (one per line)</span>
+                        <div class="input-group-vertical">
+                            <textarea id="multipleUrls" rows="6" placeholder="https://example.com/app.js&#10;https://example.com/lib.js&#10;http://localhost:8081/test.js"></textarea>
+                            <button id="analyzeMultipleBtn" class="btn-primary">
+                                <i class="fas fa-layer-group"></i> Analyze All
+                            </button>
+                        </div>
+                    </label>
+                </div>
+
+                <!-- File Upload Tab -->
+                <div id="file-tab" class="tab-content hidden">
+                    <div class="input-group-vertical">
+                        <label for="urlFile" class="file-label">
+                            <div>
+                                <div class="field-label">Upload URLs file</div>
+                                <div class="muted">Accepted: .txt, .csv (one URL per line)</div>
+                            </div>
+                            <input type="file" id="urlFile" accept=".txt,.csv" style="display: none;" />
+                            <span class="file-cta"><i class="fas fa-upload"></i> Choose file</span>
+                        </label>
+                        <div id="fileName" class="file-name hidden"></div>
+                        <button id="analyzeFileBtn" class="btn-primary" disabled>
+                            <i class="fas fa-search"></i> Analyze File
+                        </button>
+                    </div>
+                </div>
+
+                <div id="error" class="alert hidden"></div>
+                <div id="loading" class="loading hidden">
+                    <div class="spinner"></div>
+                    <span id="loading-text">Analyzing...</span>
+                </div>
+            </section>
+
+            <!-- File Cards Section (for multiple files) -->
+            <section id="files-section" class="panel files-section hidden" style="margin-top: 20px;">
+                <div class="panel-header">
+                    <div>
+                        <p class="eyebrow">Overview</p>
+                        <h2>Files analyzed</h2>
+                        <p class="muted">Select a file card to view its findings.</p>
+                    </div>
+                </div>
+                <div id="files-grid" class="files-grid"></div>
+            </section>
+
+            <section id="results" class="panel results hidden">
+            <div class="results-header panel-header">
+                <div>
+                    <p class="eyebrow">Scan output</p>
+                    <h2 id="results-title">Analysis Results</h2>
+                </div>
+                <button id="backToFiles" class="ghost-btn hidden">
+                    <i class="fas fa-arrow-left"></i> Back to files
+                </button>
+            </div>
+            <div class="filters">
+                <button class="filter-btn active" data-filter="all">All</button>
+                <button class="filter-btn" data-filter="api_keys">API Keys</button>
+                <button class="filter-btn" data-filter="credentials">Credentials</button>
+                <button class="filter-btn" data-filter="emails">Emails</button>
+                <button class="filter-btn" data-filter="xss">XSS Vulnerabilities</button>
+                <button class="filter-btn" data-filter="xss_functions">XSS Functions</button>
+                <button class="filter-btn" data-filter="api_endpoints">API Endpoints</button>
+                <button class="filter-btn" data-filter="parameters">Parameters</button>
+                <button class="filter-btn" data-filter="paths">Paths/Directories</button>
+                <button class="filter-btn" data-filter="comments">Comments</button>
+            </div>
+
+            <div class="summary">
+                <div class="stat-card">
+                    <div class="stat-icon success"><i class="fas fa-key"></i></div>
+                    <div>
+                        <span class="stat-label">API Keys</span>
+                        <span class="stat-value" id="stat-api-keys">0</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon warning"><i class="fas fa-lock"></i></div>
+                    <div>
+                        <span class="stat-label">Credentials</span>
+                        <span class="stat-value" id="stat-credentials">0</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon info"><i class="fas fa-envelope"></i></div>
+                    <div>
+                        <span class="stat-label">Emails</span>
+                        <span class="stat-value" id="stat-emails">0</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon danger"><i class="fas fa-exclamation-triangle"></i></div>
+                    <div>
+                        <span class="stat-label">XSS Issues</span>
+                        <span class="stat-value" id="stat-xss">0</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon primary"><i class="fas fa-code-branch"></i></div>
+                    <div>
+                        <span class="stat-label">API Endpoints</span>
+                        <span class="stat-value" id="stat-endpoints">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="findings-container">
+                <div id="findings-content"></div>
+            </div>
+            </section>
+        </div>
+
+        <!-- History Tab Content -->
+        <div id="history-tab-content" class="main-tab-content hidden">
+            <section class="panel history-section">
+                <div class="panel-header">
+                    <div>
+                        <p class="eyebrow">Scan History</p>
+                        <h2>Previous Scans</h2>
+                        <p class="muted">Click on any previous scan to view its results.</p>
+                    </div>
+                </div>
+                <div id="history-content" class="history-content">
+                    <div id="history-list" class="history-list">
+                        <div class="history-empty">Loading history...</div>
+                    </div>
+                </div>
+            </section>
+        </div>
+        
+        <footer class="footer">
+            <div class="muted">For authorized security testing and educational purposes only.</div>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

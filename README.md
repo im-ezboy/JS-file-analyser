@@ -232,7 +232,7 @@ This tool is intended for authorized security testing only. Unauthorized use aga
 
 ## 📞 Support
 
-For issues, questions, or contributions, please open an issue on the repository.
+For issues, questions, or contributions, please message me on telegram : @artin_web3.
 
 ---
 

@@ -121,7 +121,7 @@ GET /verify-xss?payload=<encoded_payload>&param=<parameter_name>
 ## 🏗️ Project Structure
 
 ```
-js-analyzer-final/
+JS-file-analyser/
 ├── run.py                 # Application entry point
 ├── requirements.txt       # Python dependencies
 ├── README.md             # This file
